@@ -118,22 +118,32 @@ export class TaskListComponent {
   tasks: Task[] = [];
   showTaskForm = false;
   selectedTask: Task | null = null;
-  priorityFilter?: number;
-  completedFilter?: boolean;
+  priorityFilter: number | undefined | string;
+  completedFilter: boolean | undefined | string;
 
   constructor(private readonly taskService: TaskService) {
     this.loadTasks();
   }
 
   loadTasks() {
-    const filter = {
-      completed: this.completedFilter,
-      priority: this.priorityFilter,
-    };
+    const filters: any = {};
 
-    this.taskService.getTasks(filter).subscribe({
+    if (
+      this.completedFilter !== 'undefined' &&
+      this.completedFilter !== undefined
+    ) {
+      filters.completed = this.completedFilter;
+    }
+
+    if (
+      this.priorityFilter !== 'undefined' &&
+      this.priorityFilter !== undefined
+    ) {
+      filters.priority = this.priorityFilter;
+    }
+
+    this.taskService.getTasks(filters).subscribe({
       next: (tasks) => (this.tasks = tasks),
-      error: (err) => console.error('Erro ao carregar tarefas', err),
     });
   }
 
@@ -160,14 +170,12 @@ export class TaskListComponent {
   deleteTask(task: Task) {
     this.taskService.deleteTask(task.id).subscribe({
       next: () => this.loadTasks(),
-      error: (err) => console.error('Erro ao excluir tarefa', err),
     });
   }
 
   markCompleted(task: Task) {
     this.taskService.markAsCompleted(task).subscribe({
       next: () => this.loadTasks(),
-      error: (err) => console.error('Erro ao marcar como concluída', err),
     });
   }
 
@@ -181,7 +189,6 @@ export class TaskListComponent {
         this.loadTasks();
         this.showTaskForm = false;
       },
-      error: (err) => console.error('Erro ao salvar tarefa', err),
     });
   }
 
