@@ -8,60 +8,72 @@ import { TaskFormComponent } from './task-form.component';
   standalone: true,
   imports: [CommonModule, TaskFormComponent],
   template: `
-    <div class="mb-3 text-end">
-      <button class="btn btn-primary" (click)="showForm()">Nova Tarefa</button>
-    </div>
-
-    <div *ngIf="showTaskForm" class="mb-4 p-3 border rounded bg-light">
-      <app-task-form
-        [task]="selectedTask"
-        (save)="onSave($event)"
-        (cancel)="onCancel()"
-      >
-      </app-task-form>
-    </div>
-
-    <ul class="list-group">
-      <li
-        *ngFor="let task of tasks"
-        class="list-group-item d-flex justify-content-between align-items-center"
-      >
-        <div>
-          <span
-            [ngClass]="getPriorityBadge(task.priority)"
-            class="badge me-2"
-            >{{ task.priority }}</span
-          >
-          <strong [class.text-decoration-line-through]="task.completed">{{
-            task.title
-          }}</strong>
-          <small class="text-muted d-block">{{
-            task.completed ? 'Concluída' : 'Aberta'
-          }}</small>
-        </div>
-        <div>
-          <button
-            class="btn btn-sm btn-outline-secondary me-2"
-            (click)="editTask(task)"
-          >
-            Editar
-          </button>
-          <button
-            class="btn btn-sm btn-outline-danger me-2"
-            (click)="deleteTask(task)"
-          >
-            Excluir
-          </button>
-          <button
-            *ngIf="!task.completed"
-            class="btn btn-sm btn-success"
-            (click)="markCompleted(task)"
-          >
-            Concluir
+    <div class="container mt-5">
+      <div class="card shadow">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Minhas Tarefas</h5>
+          <button class="btn btn-sm btn-primary" (click)="showForm()">
+            Nova Tarefa
           </button>
         </div>
-      </li>
-    </ul>
+
+        <div class="card-body">
+          <div *ngIf="showTaskForm" class="mb-4">
+            <app-task-form
+              [task]="selectedTask"
+              (save)="onSave($event)"
+              (cancel)="onCancel()"
+            ></app-task-form>
+          </div>
+
+          <ul class="list-group">
+            <li
+              *ngFor="let task of tasks"
+              class="list-group-item d-flex justify-content-between align-items-start"
+            >
+              <div class="ms-2 me-auto">
+                <div class="fw-bold">
+                  <span class="badge" [class]="getPriorityBadge(task.priority)">
+                    {{ getPriorityText(task.priority) }}
+                  </span>
+                  <span [class.text-decoration-line-through]="task.completed">
+                    {{ task.title }}
+                  </span>
+                </div>
+                <small class="text-muted">{{ task.description }}</small>
+                <br />
+                <small class="text-muted">{{
+                  task.completed ? 'Concluída' : 'Aberta'
+                }}</small>
+              </div>
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="editTask(task)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="deleteTask(task)"
+                >
+                  Excluir
+                </button>
+                <button
+                  *ngIf="!task.completed"
+                  class="btn btn-sm btn-success"
+                  (click)="markCompleted(task)"
+                >
+                  Concluir
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class TaskListComponent {
@@ -69,12 +81,15 @@ export class TaskListComponent {
   showTaskForm = false;
   selectedTask: Task | null = null;
 
-  constructor(private taskService: TaskService) {
+  constructor(private readonly taskService: TaskService) {
     this.loadTasks();
   }
 
   loadTasks() {
-    this.tasks = this.taskService.getTasks();
+    this.taskService.getTasks().subscribe({
+      next: (tasks) => (this.tasks = tasks),
+      error: (err) => console.error('Erro ao carregar tarefas', err),
+    });
   }
 
   showForm() {
@@ -88,52 +103,73 @@ export class TaskListComponent {
   }
 
   deleteTask(task: Task) {
-    this.taskService.deleteTask(task.id);
-    this.loadTasks();
+    this.taskService.deleteTask(task.id).subscribe({
+      next: () => this.loadTasks(),
+      error: (err) => console.error('Erro ao excluir tarefa', err),
+    });
   }
 
   markCompleted(task: Task) {
-    this.taskService.updateTask({ ...task, completed: true });
-    this.loadTasks();
+    this.taskService.markAsCompleted(task).subscribe({
+      next: () => this.loadTasks(),
+      error: (err) => console.error('Erro ao marcar como concluída', err),
+    });
   }
 
   onSave(task: Task) {
-    if (task.id) {
-      this.taskService.updateTask(task);
-    } else {
-      this.taskService.addTask(task);
-    }
-    this.loadTasks();
-    this.showTaskForm = false;
+    const operation = task.id
+      ? this.taskService.updateTask(task)
+      : this.taskService.addTask(task);
+
+    operation.subscribe({
+      next: () => {
+        this.loadTasks();
+        this.showTaskForm = false;
+      },
+      error: (err) => console.error('Erro ao salvar tarefa', err),
+    });
   }
 
   onCancel() {
     this.showTaskForm = false;
   }
 
-  getPriorityColor(priority: string): string {
-    switch (priority.toLowerCase()) {
-      case 'alta':
+  getPriorityColor(priority: number): string {
+    switch (priority) {
+      case 3:
         return 'red';
-      case 'media':
+      case 2:
         return 'orange';
-      case 'baixa':
+      case 1:
         return 'green';
       default:
         return 'black';
     }
   }
 
-  getPriorityBadge(priority: string): string {
-    switch (priority.toLowerCase()) {
-      case 'alta':
+  getPriorityBadge(priority: number): string {
+    switch (priority) {
+      case 3:
         return 'bg-danger';
-      case 'media':
+      case 2:
         return 'bg-warning text-dark';
-      case 'baixa':
+      case 1:
         return 'bg-success';
       default:
         return 'bg-secondary';
+    }
+  }
+
+  getPriorityText(priority: number): string {
+    switch (priority) {
+      case 3:
+        return 'Alta';
+      case 2:
+        return 'Média';
+      case 1:
+        return 'Baixa';
+      default:
+        return '';
     }
   }
 }

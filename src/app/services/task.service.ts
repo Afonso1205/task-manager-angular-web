@@ -1,35 +1,41 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 
 export interface Task {
-  id: number;
+  id: string;
   title: string;
-  description?: string;
+  description: string;
   priority: string;
   completed: boolean;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root',
+})
 export class TaskService {
-  private tasks: Task[] = [];
-  private nextId = 1;
+  private readonly apiUrl = 'http://localhost:3000/tasks';
 
-  getTasks(): Task[] {
-    return [...this.tasks];
+  constructor(private readonly http: HttpClient) {}
+
+  getTasks(): Observable<Task[]> {
+    return this.http.get<Task[]>(this.apiUrl);
   }
 
-  addTask(task: Task): void {
-    task.id = this.nextId++;
-    this.tasks.push(task);
+  addTask(task: Task): Observable<Task> {
+    return this.http.post<Task>(this.apiUrl, task);
   }
 
-  updateTask(task: Task): void {
-    const idx = this.tasks.findIndex((t) => t.id === task.id);
-    if (idx !== -1) {
-      this.tasks[idx] = task;
-    }
+  updateTask(task: Task): Observable<Task> {
+    return this.http.put<Task>(`${this.apiUrl}/${task.id}`, task);
   }
 
-  deleteTask(id: number): void {
-    this.tasks = this.tasks.filter((t) => t.id !== id);
+  deleteTask(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  markAsCompleted(task: Task): Observable<Task> {
+    const updated = { ...task, completed: true, completedAt: new Date() };
+    return this.updateTask(updated);
   }
 }

@@ -33,15 +33,13 @@ import { Task } from '../services/task.service';
       <div class="col-md-6">
         <label class="form-label">Prioridade</label>
         <select
+          class="form-select"
           [(ngModel)]="taskData.priority"
           name="priority"
-          class="form-select"
-          required
         >
-          <option value="" disabled>Selecione</option>
-          <option value="Alta">Alta</option>
-          <option value="Media">Média</option>
-          <option value="Baixa">Baixa</option>
+          <option [ngValue]="3">Alta</option>
+          <option [ngValue]="2">Média</option>
+          <option [ngValue]="1">Baixa</option>
         </select>
       </div>
 
@@ -79,7 +77,7 @@ export class TaskFormComponent {
   @Output() cancel = new EventEmitter<void>();
 
   taskData: Task = {
-    id: 0,
+    id: '',
     title: '',
     description: '',
     priority: '',
@@ -91,7 +89,7 @@ export class TaskFormComponent {
       this.taskData = { ...this.task };
     } else {
       this.taskData = {
-        id: 0,
+        id: '',
         title: '',
         description: '',
         priority: '',
