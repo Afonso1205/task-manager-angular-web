@@ -1,25 +1,38 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export interface Task {
   id: string;
   title: string;
   description: string;
-  priority: string;
-  completed: boolean;
+  priority: number;
+  isCompleted: boolean;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class TaskService {
-  private readonly apiUrl = 'http://localhost:3000/tasks';
+  private readonly apiUrl = 'https://localhost:44327/api/Tasks';
 
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
-  getTasks(): Observable<Task[]> {
-    return this.http.get<Task[]>(this.apiUrl);
+  getTasks(filter?: {
+    completed?: boolean;
+    priority?: number;
+  }): Observable<Task[]> {
+    let params = new HttpParams();
+
+    if (filter?.completed !== undefined) {
+      params = params.set('completed', filter.completed.toString());
+    }
+
+    if (filter?.priority !== undefined) {
+      params = params.set('priority', filter.priority.toString());
+    }
+
+    return this.http.get<Task[]>(this.apiUrl, { params });
   }
 
   addTask(task: Task): Observable<Task> {
@@ -35,7 +48,7 @@ export class TaskService {
   }
 
   markAsCompleted(task: Task): Observable<Task> {
-    const updated = { ...task, completed: true, completedAt: new Date() };
+    const updated = { ...task, isCompleted: true, completedAt: new Date() };
     return this.updateTask(updated);
   }
 }

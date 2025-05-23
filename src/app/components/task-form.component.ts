@@ -47,7 +47,7 @@ import { Task } from '../services/task.service';
         <div class="form-check mt-4">
           <input
             type="checkbox"
-            [(ngModel)]="taskData.completed"
+            [(ngModel)]="taskData.isCompleted"
             name="completed"
             class="form-check-input"
             id="completedCheck"
@@ -80,8 +80,8 @@ export class TaskFormComponent {
     id: '',
     title: '',
     description: '',
-    priority: '',
-    completed: false,
+    priority: 0,
+    isCompleted: false,
   };
 
   ngOnChanges() {
@@ -92,8 +92,8 @@ export class TaskFormComponent {
         id: '',
         title: '',
         description: '',
-        priority: '',
-        completed: false,
+        priority: 0,
+        isCompleted: false,
       };
     }
   }

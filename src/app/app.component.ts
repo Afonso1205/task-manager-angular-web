@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { TaskListComponent } from './components/task-list.component';
+import { TaskService } from './services/task.service';
 
 @Component({
   selector: 'app-root',
@@ -11,5 +12,6 @@ import { TaskListComponent } from './components/task-list.component';
     </div>
   `,
   imports: [TaskListComponent],
+  providers: [TaskService],
 })
 export class AppComponent {}

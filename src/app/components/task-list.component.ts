@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Task, TaskService } from '../services/task.service';
 import { TaskFormComponent } from './task-form.component';
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, TaskFormComponent],
+  imports: [CommonModule, TaskFormComponent, FormsModule],
   template: `
     <div class="container mt-5">
       <div class="card shadow">
@@ -20,6 +21,43 @@ import { TaskFormComponent } from './task-form.component';
         </div>
 
         <div class="card-body">
+          <!-- Filtros -->
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Prioridade</label>
+              <select
+                class="form-select"
+                [(ngModel)]="priorityFilter"
+                (change)="applyFilters()"
+              >
+                <option [value]="undefined">Todas</option>
+                <option value="3">Alta</option>
+                <option value="2">Média</option>
+                <option value="1">Baixa</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status</label>
+              <select
+                class="form-select"
+                [(ngModel)]="completedFilter"
+                (change)="applyFilters()"
+              >
+                <option [value]="undefined">Todas</option>
+                <option value="false">Abertas</option>
+                <option value="true">Concluídas</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button
+                class="btn btn-outline-secondary"
+                (click)="clearFilters()"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+
           <div *ngIf="showTaskForm" class="mb-4">
             <app-task-form
               [task]="selectedTask"
@@ -38,14 +76,14 @@ import { TaskFormComponent } from './task-form.component';
                   <span class="badge" [class]="getPriorityBadge(task.priority)">
                     {{ getPriorityText(task.priority) }}
                   </span>
-                  <span [class.text-decoration-line-through]="task.completed">
+                  <span [class.text-decoration-line-through]="task.isCompleted">
                     {{ task.title }}
                   </span>
                 </div>
                 <small class="text-muted">{{ task.description }}</small>
                 <br />
                 <small class="text-muted">{{
-                  task.completed ? 'Concluída' : 'Aberta'
+                  task.isCompleted ? 'Concluída' : 'Aberta'
                 }}</small>
               </div>
               <div class="d-flex gap-2">
@@ -62,7 +100,7 @@ import { TaskFormComponent } from './task-form.component';
                   Excluir
                 </button>
                 <button
-                  *ngIf="!task.completed"
+                  *ngIf="!task.isCompleted"
                   class="btn btn-sm btn-success"
                   (click)="markCompleted(task)"
                 >
@@ -80,16 +118,33 @@ export class TaskListComponent {
   tasks: Task[] = [];
   showTaskForm = false;
   selectedTask: Task | null = null;
+  priorityFilter?: number;
+  completedFilter?: boolean;
 
   constructor(private readonly taskService: TaskService) {
     this.loadTasks();
   }
 
   loadTasks() {
-    this.taskService.getTasks().subscribe({
+    const filter = {
+      completed: this.completedFilter,
+      priority: this.priorityFilter,
+    };
+
+    this.taskService.getTasks(filter).subscribe({
       next: (tasks) => (this.tasks = tasks),
       error: (err) => console.error('Erro ao carregar tarefas', err),
     });
+  }
+
+  applyFilters() {
+    this.loadTasks();
+  }
+
+  clearFilters() {
+    this.priorityFilter = undefined;
+    this.completedFilter = undefined;
+    this.loadTasks();
   }
 
   showForm() {
